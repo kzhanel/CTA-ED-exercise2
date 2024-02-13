@@ -23,7 +23,7 @@ tweets <- tweets %>%
          newspaper = user_name,
          tweet = text)
 
-# Lowercase and tokenize
+# Lowercase and tokenise
 tidy_tweets <- tweets %>% 
   mutate(desc = tolower(tweet)) %>%
   unnest_tokens(word, desc) %>%
@@ -74,4 +74,3 @@ ggplot(aes(date, pctmwords)) +
   geom_smooth(method= loess, alpha=0.25) +
   xlab("Date") + ylab("% Anxiety Words")
 ```
-
