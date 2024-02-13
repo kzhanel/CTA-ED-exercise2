@@ -385,8 +385,3 @@ tidy_sent %>%
 3. Apply the Lexicoder Sentiment Dictionary to the news tweets, but break down the analysis by newspaper
 4. Don't forget to 'knit' to produce your final html output for the exercise.
 
-
-
-
-
-
