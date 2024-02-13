@@ -388,9 +388,55 @@ tidy_sent %>%
 Question 1 
 Looking at "fear" sentiment
 
-Go through same process from code row 22-167
+Go through same process from code row 22-186
 ```{r}
+#get tweet sentiment example by newspaper (nrc)
+tweets_nrc_sentiment <- tidy_tweets %>%
+  inner_join(get_sentiments("nrc")) %>%
+  count(newspaper, index = order %/% 1000, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+tweets_nrc_sentiment %>%
+  ggplot(aes(newspaper, sentiment)) +
+  geom_point(alpha=0.5) +
+  geom_smooth(method= loess, alpha=0.25)
 
 ```
 
+```{r}
+#get tweet sentiment by newspaper (all dictionaries)
+tidy_tweets %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(newspaper, index = order %/% 1000, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative) %>%
+  ggplot(aes(newspaper, sentiment)) +
+  geom_point(alpha=0.5) +
+  geom_smooth(method= loess, alpha=0.25) +
+  ylab("bing sentiment") +
+  theme(axis.text.x = element_text(angle = 45))
+
+tidy_tweets %>%
+  inner_join(get_sentiments("nrc")) %>%
+  count(newspaper, index = order %/% 1000, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative) %>%
+  ggplot(aes(newspaper, sentiment)) +
+  geom_point(alpha=0.5) +
+  geom_smooth(method= loess, alpha=0.25) +
+  ylab("nrc sentiment") +
+  theme(axis.text.x = element_text(angle = 45))
+
+tidy_tweets %>%
+  inner_join(get_sentiments("afinn")) %>%
+  group_by(newspaper, index = order %/% 1000) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  ggplot(aes(newspaper, sentiment)) +
+  geom_point(alpha=0.5) +
+  geom_smooth(method= loess, alpha=0.25) +
+  ylab("afinn sentiment") +
+  theme(axis.text.x = element_text(angle = 45))
+
+```
 
