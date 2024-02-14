@@ -78,8 +78,8 @@ tweets  <- readRDS(gzcon(url("https://github.com/cjbarrie/CTA-ED/blob/main/data/
 Let's have a look at the data:
 
 ```{r}
-head(tweets)
-colnames(tweets)
+head(tweets) ##head means table only shows snapshot of data
+colnames(tweets) ##number and names of columns in dataset
 ```
 
 Each row here is a tweets produced by one of the news outlets detailed above over a five month period, January--May 2020. Note also that each tweets has a particular date. We can therefore use these to look at any over time changes.
@@ -90,35 +90,35 @@ We won't need all of these variables so let's just keep those that are of intere
 
 tweets <- tweets %>%
   select(user_username, text, created_at, user_name,
-         retweet_count, like_count, quote_count) %>%
+         retweet_count, like_count, quote_count) %>% ##selects columns that i need
   rename(username = user_username,
          newspaper = user_name,
-         tweet = text)
+         tweet = text) ##renames columns right to left
 
 ```
 
 ```{r, echo = F}
 tweets %>% 
-  arrange(created_at) %>%
-  tail(5) %>%
-  kbl() %>%
-  kable_styling(c("striped", "hover", "condensed", "responsive"))
+  arrange(created_at) %>% ##orders by column created_at
+  tail(5) %>% ##probs a row
+  kbl() %>% ##to generate table
+  kable_styling(c("striped", "hover", "condensed", "responsive")) ##kable shows all tweet description in table
 ```
 
 We manipulate the data into tidy format again, unnesting each token (here: words) from the tweet text. 
 
 ```{r}
 tidy_tweets <- tweets %>% 
-  mutate(desc = tolower(tweet)) %>%
-  unnest_tokens(word, desc) %>%
-  filter(str_detect(word, "[a-z]"))
+  mutate(desc = tolower(tweet)) %>% ##mutate adds columns to the dataset and tolower changes from uppercase to lowercase
+  unnest_tokens(word, desc) %>% ##splits into each single word 1 word = 1 row
+  filter(str_detect(word, "[a-z]")) ##regular expr lowerc case from a to z
 ```
 
 We'll then tidy this further, as in the previous example, by removing stop words:
 
 ```{r}
 tidy_tweets <- tidy_tweets %>%
-    filter(!word %in% stop_words$word)
+    filter(!word %in% stop_words$word) ##ask tomorrow to check
 ```
 
 ## Get sentiment dictionaries
@@ -132,7 +132,7 @@ Several sentiment dictionaries come bundled with the <tt>tidytext</tt> package. 
 We can have a look at some of these to see how the relevant dictionaries are stored. 
 
 ```{r}
-get_sentiments("afinn")
+get_sentiments("afinn") ##to show dictionary and their scores
 ```
 
 ```{r}
@@ -150,10 +150,10 @@ Let's see how we might filter the texts by selecting a dictionary, or subset of 
 ```{r}
 
 nrc_fear <- get_sentiments("nrc") %>% 
-  filter(sentiment == "fear")
+  filter(sentiment == "fear") ##choosing fear only sentiments
 
 tidy_tweets %>%
-  inner_join(nrc_fear) %>%
+  inner_join(nrc_fear) %>% ##merges same value rows and columns together
   count(word, sort = TRUE)
 
 ```
@@ -169,9 +169,9 @@ Do we see any time trends? First let's make sure the data are properly arranged 
 tidy_tweets$date <- as.Date(tidy_tweets$created_at)
 
 tidy_tweets <- tidy_tweets %>%
-  arrange(date)
+  arrange(date) ##arrange the order of the dates
 
-tidy_tweets$order <- 1:nrow(tidy_tweets)
+tidy_tweets$order <- 1:nrow(tidy_tweets) ##creating new column called order that numbers each row
 
 ```
 
@@ -181,7 +181,7 @@ In the below, we first add in our sentiment dictionary with `inner_join()`. We t
 
 This means that if one date has many tweets totalling >1000 words, then we will have multiple observations for that given date; if there are only one or two tweets then we might have just one row and associated sentiment score for that date. 
 
-We then calculate the sentiment scores for each of our sentiment types (positive, negative, anger, anticipation, disgust, fear, joy, sadness, surprise, and trust) and use the `spread()` function to convert these into separate columns (rather than rows). Finally we calculate a net sentiment score by subtracting the score for negative sentiment from positive sentiment. 
+We then calculate the sentiment scores for each of our sentiment types (positive, negative, anger, anticipation, disgust, fear, joy, sadness, surprise, and trust) and use the `spread()` function to convert these into separate columns (rather than rows). Finally we calculate a net sentiment score by subtracting the score for negative sentiment from positive sentiment. ##net sentiment score shows the overall sentiment/connotation
 
 ```{r}
 #get tweet sentiment by date
@@ -189,12 +189,12 @@ tweets_nrc_sentiment <- tidy_tweets %>%
   inner_join(get_sentiments("nrc")) %>%
   count(date, index = order %/% 1000, sentiment) %>%
   spread(sentiment, n, fill = 0) %>%
-  mutate(sentiment = positive - negative)
+  mutate(sentiment = positive - negative) ##creates new column for sentiment score
 
 tweets_nrc_sentiment %>%
-  ggplot(aes(date, sentiment)) +
-  geom_point(alpha=0.5) +
-  geom_smooth(method= loess, alpha=0.25)
+  ggplot(aes(date, sentiment)) + ##ggplot creates graph; aes means what goes into the graph
+  geom_point(alpha=0.5) + ##geom point adds layer scatterplot to graph
+  geom_smooth(method= loess, alpha=0.25) ##geom smooth adds trend line
 
 ```
 
@@ -247,7 +247,7 @@ A very minimal example would choose, for example, words like "death" and its syn
 word <- c('death', 'illness', 'hospital', 'life', 'health',
              'fatality', 'morbidity', 'deadly', 'dead', 'victim')
 value <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-mordict <- data.frame(word, value)
+mordict <- data.frame(word, value) ##makes in into a dataset
 mordict
 
 ```
@@ -260,8 +260,8 @@ tidy_tweets %>%
   group_by(date, index = order %/% 1000) %>% 
   summarise(morwords = sum(value)) %>% 
   ggplot(aes(date, morwords)) +
-  geom_bar(stat= "identity") +
-  ylab("mortality words")
+  geom_bar(stat= "identity") + ## adjusts the height of bars = values of the data
+  ylab("mortality words") ##naming y axis
 ```
 
 The above simply counts the number of mortality words over time. This might be misleading if there are, for example, more or longer tweets at certain points in time; i.e., if the length or quantity of text is not time-constant. 
@@ -278,19 +278,19 @@ mordict <- c('death', 'illness', 'hospital', 'life', 'health',
 
 #get total tweets per day (no missing dates so no date completion required)
 totals <- tidy_tweets %>%
-  mutate(obs=1) %>%
+  mutate(obs=1) %>% ##add column obs=1
   group_by(date) %>%
-  summarise(sum_words = sum(obs))
+  summarise(sum_words = sum(obs)) ##create new column sum_words adding all the numbers in obs column
 
 #plot
 tidy_tweets %>%
   mutate(obs=1) %>%
-  filter(grepl(paste0(mordict, collapse = "|"),word, ignore.case = T)) %>%
+  filter(grepl(paste0(mordict, collapse = "|"),word, ignore.case = T)) %>% ##paste0 adds separation sign |; grepl matches words with similar patterns; ignore.case is a new V
   group_by(date) %>%
   summarise(sum_mwords = sum(obs)) %>%
-  full_join(totals, word, by="date") %>%
-  mutate(sum_mwords= ifelse(is.na(sum_mwords), 0, sum_mwords),
-         pctmwords = sum_mwords/sum_words) %>%
+  full_join(totals, word, by="date") %>% ##matching relevant values in both rows and columns combined
+  mutate(sum_mwords= ifelse(is.na(sum_mwords), 0, sum_mwords), ##is.na looks for missing values in a column 
+         pctmwords = sum_mwords/sum_words) %>% ##ifelse creates condition ##percentage of missing words
   ggplot(aes(date, pctmwords)) +
   geom_point(alpha=0.5) +
   geom_smooth(method= loess, alpha=0.25) +
@@ -335,11 +335,11 @@ This creates a long list of all the texts (tweets) annotated with a series of 'p
 ```{r}
 # create a document document-feature matrix and group it by date
 dfmat_news_lsd <- dfm(toks_news_lsd) %>% 
-  dfm_group(groups = date)
+  dfm_group(groups = date) ##dfm constructs a document feature matrix
 
 # plot positive and negative valence over time
 matplot(dfmat_news_lsd$date, dfmat_news_lsd, type = "l", lty = 1, col = 1:2,
-        ylab = "Frequency", xlab = "")
+        ylab = "Frequency", xlab = "") ##matplot makes a new plot
 grid()
 legend("topleft", col = 1:2, legend = colnames(dfmat_news_lsd), lty = 1, bg = "white")
 
@@ -348,7 +348,7 @@ legend("topleft", col = 1:2, legend = colnames(dfmat_news_lsd), lty = 1, bg = "w
 plot(dfmat_news_lsd$date, dfmat_news_lsd[,"positive"] - dfmat_news_lsd[,"negative"], 
      type = "l", ylab = "Sentiment", xlab = "")
 grid()
-abline(h = 0, lty = 2)
+abline(h = 0, lty = 2) ##adds vertical, horiz or regression lines to graph
 
 ```
 
@@ -386,16 +386,16 @@ tidy_sent %>%
 4. Don't forget to 'knit' to produce your final html output for the exercise.
 
 Question 1 
-Looking at "fear" sentiment
+Looking at "fear" sentiment still keeping the same sentiment from above
 
 Go through same process from code row 22-186
 ```{r}
 #get tweet sentiment example by newspaper (nrc)
 tweets_nrc_sentiment <- tidy_tweets %>%
-  inner_join(get_sentiments("nrc")) %>%
+  inner_join(get_sentiments("nrc")) %>% ##inner_join means finding a matching value within both column and row if any words within both nrc and tidy_tweets match
   count(newspaper, index = order %/% 1000, sentiment) %>%
-  spread(sentiment, n, fill = 0) %>%
-  mutate(sentiment = positive - negative)
+  spread(sentiment, n, fill = 0) %>% ##we only consider those words that reach 1000 mentions and then we calculate net sentiment score which is sentiment column. spread means changing every sentiment cell to a column name
+  mutate(sentiment = positive - negative) #separate column with a score
 
 tweets_nrc_sentiment %>%
   ggplot(aes(newspaper, sentiment)) +
@@ -415,7 +415,7 @@ tidy_tweets %>%
   geom_point(alpha=0.5) +
   geom_smooth(method= loess, alpha=0.25) +
   ylab("bing sentiment") +
-  theme(axis.text.x = element_text(angle = 45))
+  theme(axis.text.x = element_text(angle = 45)) ##theme deals with format of graph in general. if i change text formatting in x axis i put axis.text.x. element_text means the layout of the text within a graph
 
 tidy_tweets %>%
   inner_join(get_sentiments("nrc")) %>%
