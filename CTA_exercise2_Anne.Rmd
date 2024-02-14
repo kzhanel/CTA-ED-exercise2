@@ -91,18 +91,18 @@ We won't need all of these variables so let's just keep those that are of intere
 tweets <- tweets %>%
   select(user_username, text, created_at, user_name,
          retweet_count, like_count, quote_count) %>%
-  rename(username = user_username,
-         newspaper = user_name,
-         tweet = text)
+  rename(username = user_username, #changes user_username to username 
+         newspaper = user_name, #user_name to newspaper
+         tweet = text) #text to tweet
 
 ```
 
 ```{r, echo = F}
 tweets %>% 
-  arrange(created_at) %>%
-  tail(5) %>%
-  kbl() %>%
-  kable_styling(c("striped", "hover", "condensed", "responsive"))
+  arrange(created_at) %>% #takes the tweets data frame and arranges its rows in ascending order based on the created_at column, sorts the tweets from the earliest to the latest
+  tail(5) %>% #selects the last 5 rows of the sorted data frame (the five most recent tweets)
+  kbl() %>% #turns r dataframe into formatted table
+  kable_styling(c("striped", "hover", "condensed", "responsive")) #styling options withing the dataframe 
 ```
 
 We manipulate the data into tidy format again, unnesting each token (here: words) from the tweet text. 
@@ -118,7 +118,7 @@ We'll then tidy this further, as in the previous example, by removing stop words
 
 ```{r}
 tidy_tweets <- tidy_tweets %>%
-    filter(!word %in% stop_words$word)
+    filter(!word %in% stop_words$word) #filter out words in stop_words
 ```
 
 ## Get sentiment dictionaries
@@ -132,15 +132,15 @@ Several sentiment dictionaries come bundled with the <tt>tidytext</tt> package. 
 We can have a look at some of these to see how the relevant dictionaries are stored. 
 
 ```{r}
-get_sentiments("afinn")
+get_sentiments("afinn") #uses -5 to 5, no zero
 ```
 
 ```{r}
-get_sentiments("bing")
+get_sentiments("bing")#negative vs positive, binary classification
 ```
 
 ```{r}
-get_sentiments("nrc")
+get_sentiments("nrc")#multiple word associations for the same word, like abandon  "fear, negative , sadness", huge lib
 ```
 
 What do we see here. First, the `AFINN` lexicon gives words a score from -5 to +5, where more negative scores indicate more negative sentiment and more positive scores indicate more positive sentiment.  The `nrc` lexicon opts for a binary classification: positive, negative, anger, anticipation, disgust, fear, joy, sadness, surprise, and trust, with each word given a score of 1/0 for each of these sentiments. In other words, for the `nrc` lexicon, words appear multiple times if they enclose more than one such emotion (see, e.g., "abandon" above). The `bing` lexicon is most minimal, classifying words simply into binary "positive" or "negative" categories. 
@@ -150,11 +150,11 @@ Let's see how we might filter the texts by selecting a dictionary, or subset of 
 ```{r}
 
 nrc_fear <- get_sentiments("nrc") %>% 
-  filter(sentiment == "fear")
+  filter(sentiment == "fear") #looking in nrc for fear words
 
 tidy_tweets %>%
-  inner_join(nrc_fear) %>%
-  count(word, sort = TRUE)
+  inner_join(nrc_fear) %>% #filter the tweet data
+  count(word, sort = TRUE) #for those where it is true, return the word and the number of times it apprear? what is N
 
 ```
 
@@ -186,13 +186,13 @@ We then calculate the sentiment scores for each of our sentiment types (positive
 ```{r}
 #get tweet sentiment by date
 tweets_nrc_sentiment <- tidy_tweets %>%
-  inner_join(get_sentiments("nrc")) %>%
-  count(date, index = order %/% 1000, sentiment) %>%
-  spread(sentiment, n, fill = 0) %>%
-  mutate(sentiment = positive - negative)
+  inner_join(get_sentiments("nrc")) %>% #add in the sentiment dictionary
+  count(date, index = order %/% 1000, sentiment) %>% #specify we count over dates, index = order (by row number), over every 1000 rows (every 1000 words)
+  spread(sentiment, n, fill = 0) %>% #spread to convert the sentiment scores for our sentiment types into columns (not rows)
+  mutate(sentiment = positive - negative)#calc sentiment score sub neg sentiment from pos sentiment
 
 tweets_nrc_sentiment %>%
-  ggplot(aes(date, sentiment)) +
+  ggplot(aes(date, sentiment)) + #plot it in ggplot date vs sentiment
   geom_point(alpha=0.5) +
   geom_smooth(method= loess, alpha=0.25)
 
@@ -203,7 +203,7 @@ How do our different sentiment dictionaries look when compared to each other? We
 ```{r}
 
 tidy_tweets %>%
-  inner_join(get_sentiments("bing")) %>%
+  inner_join(get_sentiments("bing")) %>% #BING dictionary
   count(date, index = order %/% 1000, sentiment) %>%
   spread(sentiment, n, fill = 0) %>%
   mutate(sentiment = positive - negative) %>%
@@ -213,7 +213,7 @@ tidy_tweets %>%
   ylab("bing sentiment")
 
 tidy_tweets %>%
-  inner_join(get_sentiments("nrc")) %>%
+  inner_join(get_sentiments("nrc")) %>% #NRC dictionary
   count(date, index = order %/% 1000, sentiment) %>%
   spread(sentiment, n, fill = 0) %>%
   mutate(sentiment = positive - negative) %>%
@@ -223,11 +223,11 @@ tidy_tweets %>%
   ylab("nrc sentiment")
 
 tidy_tweets %>%
-  inner_join(get_sentiments("afinn")) %>%
+  inner_join(get_sentiments("afinn")) %>% #AFINN 
   group_by(date, index = order %/% 1000) %>% 
   summarise(sentiment = sum(value)) %>% 
   ggplot(aes(date, sentiment)) +
-  geom_point(alpha=0.5) +
+  geom_point(alpha=0.5) + #scatter plot
   geom_smooth(method= loess, alpha=0.25) +
   ylab("afinn sentiment")
 
@@ -243,11 +243,11 @@ Of course, list- or dictionary-based methods need not only focus on sentiment, e
 A very minimal example would choose, for example, words like "death" and its synonyms and score these all as 1. We would then combine these into a dictionary, which we've called "mordict" here. 
 
 ```{r}
-
+#create a list of words associated to mortality
 word <- c('death', 'illness', 'hospital', 'life', 'health',
              'fatality', 'morbidity', 'deadly', 'dead', 'victim')
-value <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-mordict <- data.frame(word, value)
+value <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1) #assign a value to the words 1 being mortality related
+mordict <- data.frame(word, value) #make dictionary/data frame with word n value
 mordict
 
 ```
@@ -255,12 +255,12 @@ mordict
 We could then use the same technique as above to bind these with our data and look at the incidence of such words over time. Combining the sequence of scripts from above we would do the following:
 
 ```{r}
-tidy_tweets %>%
+tidy_tweets %>% #bind mordict to data and look at instances over time
   inner_join(mordict) %>%
   group_by(date, index = order %/% 1000) %>% 
   summarise(morwords = sum(value)) %>% 
   ggplot(aes(date, morwords)) +
-  geom_bar(stat= "identity") +
+  geom_bar(stat= "identity") + #barchart / freq chart
   ylab("mortality words")
 ```
 
@@ -288,13 +288,13 @@ tidy_tweets %>%
   filter(grepl(paste0(mordict, collapse = "|"),word, ignore.case = T)) %>%
   group_by(date) %>%
   summarise(sum_mwords = sum(obs)) %>%
-  full_join(totals, word, by="date") %>%
+  full_join(totals, word, by="date") %>% #include dates whre there are no mort word, you dont want to exclude
   mutate(sum_mwords= ifelse(is.na(sum_mwords), 0, sum_mwords),
          pctmwords = sum_mwords/sum_words) %>%
   ggplot(aes(date, pctmwords)) +
-  geom_point(alpha=0.5) +
-  geom_smooth(method= loess, alpha=0.25) +
-  xlab("Date") + ylab("% mortality words")
+  geom_point(alpha=0.5) + #scatter plot
+  geom_smooth(method= loess, alpha=0.25) + #line of best fit
+  xlab("Date") + ylab("% mortality words") #x n y axes
 
 
 ```
@@ -305,19 +305,21 @@ The above approaches use general dictionary-based techniques that were not desig
 
 We will conduct the analysis using the `quanteda` package. You will see that we can tokenize text in a similar way using functions included in the quanteda package. 
 
-With the `quanteda` package we first need to create a "corpus" object, by declaring our tweets a corpus object. Here, we make sure our date column is correctly stored and then create the corpus object with the `corpus()` function. Note that we are specifying the `text_field` as "tweet" as this is where our text data of interest is, and we are including information on the date that tweet was published. This information is specified with the `docvars` argument. You'll see tthen that the corpus consists of the text and so-called "docvars," which are just the variables (columns) in the original dataset. Here, we have only included the date column.
+With the `quanteda` package we first need to create a "corpus" object, by declaring our tweets a corpus object. Here, we make sure our date column is correctly stored and then create the corpus object with the `corpus()` function. Note that we are specifying the `text_field` as "tweet" as this is where our text data of interest is, and we are including information on the date that tweet was published. This information is specified with the `docvars` argument. You'll see then that the corpus consists of the text and so-called "docvars," which are just the variables (columns) in the original dataset. Here, we have only included the date column.
 
 ```{r}
 
-tweets$date <- as.Date(tweets$created_at)
+tweets$date <- as.Date(tweets$created_at)#make sure date column stored correctly
 
-tweet_corpus <- corpus(tweets, text_field = "tweet", docvars = "date")
+
+tweet_corpus <- corpus(tweets, text_field = "tweet", docvars = "date",) #make a corpus object for use in quanteda pkge, docvars includes info on when tweet was published 
+#WARNING 'docvars' argument is not used
 ```
 
 
 We then tokenize our text using the `tokens()` function from quanteda, removing punctuation along the way:
 ```{r}
-toks_news <- tokens(tweet_corpus, remove_punct = TRUE)
+toks_news <- tokens(tweet_corpus, remove_punct = TRUE) #tokenize the text and remove punctuation
 
 ```
 
@@ -325,12 +327,12 @@ We then take the `data_dictionary_LSD2015` that comes bundled with `quanteda` an
 
 ```{r}
 # select only the "negative" and "positive" categories
-data_dictionary_LSD2015_pos_neg <- data_dictionary_LSD2015[1:2]
+data_dictionary_LSD2015_pos_neg <- data_dictionary_LSD2015[1:2]#Only pos and neg categories 
 
-toks_news_lsd <- tokens_lookup(toks_news, dictionary = data_dictionary_LSD2015_pos_neg)
+toks_news_lsd <- tokens_lookup(toks_news, dictionary = data_dictionary_LSD2015_pos_neg) #look up how the tokens in corpus are stored
 ```
 
-This creates a long list of all the texts (tweets) annotated with a series of 'positive' or 'negative' annotations depending on the valence of the words in that text. The creators of `quanteda` then recommend we generate a document feature matric from this. Grouping by date, we then get a dfm object, which is a quite convoluted list object that we can plot using base graphics functions for plotting matrices.
+This creates a long list of all the texts (tweets) annotated with a series of 'positive' or 'negative' annotations depending on the valence of the words in that text. The creators of `quanteda` then recommend we generate a document feature matrix from this. Grouping by date, we then get a dfm object, which is a quite convoluted list object that we can plot using base graphics functions for plotting matrices.
 
 ```{r}
 # create a document document-feature matrix and group it by date
@@ -384,4 +386,73 @@ tidy_sent %>%
 2. Build your own (minimal) dictionary-based filter technique and plot the result
 3. Apply the Lexicoder Sentiment Dictionary to the news tweets, but break down the analysis by newspaper
 4. Don't forget to 'knit' to produce your final html output for the exercise.
+
+3. Apply the Lexicoder Sentiment Dictionary to the news tweets, but break down the analysis by newspaper
+```{r}
+tweets$date <- as.Date(tweets$created_at)#make sure date column stored correctly
+#maybe I need to do something here for newspaper to store right? or maybe is in df correctly already
+tweet_corpus <- corpus(tweets,
+                       text_field = "tweet", 
+                       docvars = data.frame(date = tweets$date, newspaper = tweets$newspaper)) #make a corpus object for use in quanteda pkge, docvars includes info on when tweet was published 
+
+toks_news <- tokens(tweet_corpus, remove_punct = TRUE) #tokenize the text and remove punctuation
+
+
+data_dictionary_LSD2015_pos_neg <- data_dictionary_LSD2015[1:2]#Only pos and neg categories 
+
+toks_news_lsd <- tokens_lookup(toks_news, dictionary = data_dictionary_LSD2015_pos_neg)#look up how the tokens in corpus are stored
+
+#create a doc document-feature matrix and group it by date
+dfmat_news_lsd <- dfm(toks_news_lsd) %>% 
+  dfm_group(groups = date)
+
+# plot overall sentiment (positive  - negative) over time by newspaper
+
+plot(dfmat_news_lsd$date, dfmat_news_lsd[,"positive"] - dfmat_news_lsd[,"negative"], 
+     type = "l", ylab = "Sentiment", xlab = "")
+grid()
+abline(h = 0, lty = 2)
+
+```
+
+
+```{r}
+tweets$date <- as.Date(tweets$created_at)#make sure date column stored correctly
+#maybe I need to do something here for newspaper to store right? or maybe is in df correctly already
+tweet_corpus <- corpus(tweets,
+                       text_field = "tweet", 
+                       docvars = data.frame(date = tweets$date, newspaper = tweets$newspaper)) #make a corpus object for use in quanteda pkge, docvars includes info on when tweet was published 
+toks_news <- tokens(tweet_corpus, remove_punct = TRUE) #tokenize the text and remove punctuation
+
+
+data_dictionary_LSD2015_pos_neg <- data_dictionary_LSD2015[1:2]#Only pos and neg categories, apply dictionary
+
+toks_news_lsd <- tokens_lookup(toks_news, dictionary = data_dictionary_LSD2015_pos_neg)#look up how the tokens in corpus are stored
+
+#create a document document-feature matrix and group it by date
+dfmat_news_lsd <- dfm(toks_news_lsd) %>% 
+dfm_group(groups = date, newspaper)
+
+negative <- dfmat_news_lsd@x[1:121] #get neg feature from quanteda dfm, why 1:121?
+positive <- dfmat_news_lsd@x[122:242] #get pos feature
+date <- dfmat_news_lsd@Dimnames$docs #get date feature
+newspaper <- docvars(dfmat_news_lsd, "newspaper") #get newspaper as a var from dfm
+
+#combine it all into df
+tidy_sent <- as.data.frame(cbind(negative, positive, date, newspaper))
+
+#get the numeric vals and calc sentiment
+tidy_sent$negative <- as.numeric(tidy_sent$negative)#makes num
+tidy_sent$positive <- as.numeric(tidy_sent$positive)#makes num
+tidy_sent$sentiment <- tidy_sent$positive - tidy_sent$negative #calc overall sentiment 
+tidy_sent$date <- as.Date(tidy_sent$date)#format as date
+
+#plot overall sentiment over time with a line for each newspaper
+tidy_sent %>%
+  ggplot()+
+  geom_line(aes(date, sentiment, color = newspapers))
+#group n color by newspaper
+
+
+```
 
